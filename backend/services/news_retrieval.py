@@ -1,15 +1,35 @@
 import os
 import logging
 import requests
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
+import json
 
-load_dotenv(override=True)
+# Configura il logger
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+# Carica le chiavi dall'ambiente
+load_dotenv(override=True)
 NEWSAPI_KEY = os.getenv("NEWSAPI_KEY")
 REDDIT_CLIENT_ID = os.getenv("REDDIT_CLIENT_ID")
 REDDIT_SECRET = os.getenv("REDDIT_SECRET")
-REDDIT_USER_AGENT = "PostGeniusApp/1.0"  # Puoi personalizzarlo
+REDDIT_USER_AGENT = "PostGeniusApp/1.0"
+
+# Configurazione centralizzata
+LIMIT = 3  # Limite massimo di articoli
+CONFIG = {
+    "newsapi": {
+        "page_size": LIMIT,
+        "language": "en",
+        "sort_by": "relevancy",
+        "lookback_days": 7,
+    },
+    "reddit": {
+        "subreddits_limit": LIMIT,
+        "posts_limit": LIMIT,
+    },
+}
 
 def get_relevant_articles(prompt: str):
     if not prompt:
@@ -30,32 +50,44 @@ def get_relevant_articles(prompt: str):
     else:
         logger.warning("Reddit API credentials are missing in environment. Skipping Reddit.")
 
-    return articles
+    return [convert_to_vectara_format(article) for article in articles]
 
 def _get_newsapi_articles(prompt: str):
-    url = f"https://newsapi.org/v2/everything?q={prompt}&sortBy=publishedAt&apiKey={NEWSAPI_KEY}"
-    logger.debug(f"NewsAPI URL: {url}")
+    current_date = datetime.utcnow()
+    lookback_days = CONFIG["newsapi"]["lookback_days"]
+    start_date = current_date - timedelta(days=lookback_days)
+
+    params = {
+        "apiKey": NEWSAPI_KEY,
+        "q": prompt,
+        "searchIn": "title,content",
+        "language": CONFIG["newsapi"]["language"],
+        "sortBy": CONFIG["newsapi"]["sort_by"],
+        "pageSize": CONFIG["newsapi"]["page_size"],
+        "from": start_date.isoformat(),
+        "to": current_date.isoformat(),
+    }
+
+    url = "https://newsapi.org/v2/everything"
+    logger.debug(f"NewsAPI URL: {url}, Params: {params}")
 
     try:
-        response = requests.get(url)
+        response = requests.get(url, params=params)
         response.raise_for_status()
         data = response.json()
         articles = data.get("articles", [])
         if not articles:
             logger.info(f"No articles returned for prompt: {prompt} from NewsAPI.")
-        return articles[:5]  # Limita a 5 articoli
+        return articles
     except requests.RequestException as e:
         logger.exception(f"Request error to NewsAPI: {e}")
-    except Exception as e:
-        logger.exception(f"Unexpected error retrieving news from NewsAPI: {e}")
     return []
 
-def _get_reddit_posts(prompt: str):
+def _get_reddit_token():
     auth = requests.auth.HTTPBasicAuth(REDDIT_CLIENT_ID, REDDIT_SECRET)
     data = {"grant_type": "client_credentials"}
     headers = {"User-Agent": REDDIT_USER_AGENT}
 
-    # Ottieni il token di accesso
     try:
         token_response = requests.post(
             "https://www.reddit.com/api/v1/access_token", 
@@ -64,21 +96,32 @@ def _get_reddit_posts(prompt: str):
         token_response.raise_for_status()
         token = token_response.json().get("access_token")
         logger.debug(f"Reddit access token obtained: {token}")
+        return token
     except requests.RequestException as e:
         logger.exception(f"Failed to authenticate with Reddit API: {e}")
+        return None
+
+def _get_reddit_posts(prompt: str):
+    token = _get_reddit_token()
+    if not token:
         return []
 
-    # Usa il token per cercare post
-    headers["Authorization"] = f"bearer {token}"
-    url = f"https://oauth.reddit.com/search?q={prompt}&limit=5"
+    headers = {
+        "Authorization": f"bearer {token}",
+        "User-Agent": REDDIT_USER_AGENT,
+    }
+
+    url = "https://oauth.reddit.com/search"
+    params = {
+        "q": prompt,
+        "limit": CONFIG["reddit"]["posts_limit"],
+        "sort": "relevance",
+    }
+
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, params=params)
         response.raise_for_status()
         posts = response.json().get("data", {}).get("children", [])
-        
-        # Log dettagliato sui post recuperati
-        logger.debug(f"Number of Reddit posts retrieved: {len(posts)}")
-        logger.debug(f"Raw Reddit posts data: {posts}")
 
         articles = [
             {
@@ -93,10 +136,34 @@ def _get_reddit_posts(prompt: str):
             }
             for post in posts
         ]
-
-        # Log sui dati strutturati
-        logger.debug(f"Formatted Reddit articles: {articles}")
         return articles
     except requests.RequestException as e:
         logger.exception(f"Request error to Reddit API: {e}")
         return []
+
+def convert_to_vectara_format(article):
+    """
+    Converte un articolo nel formato compatibile con Vectara.
+    Ogni frase del contenuto viene separata in base al punto.
+    """
+    vectara_output = {
+        "documentId": article.get("documentId", "unknown"),
+        "title": article.get("title", "Untitled"),
+        "metadataJson": json.dumps({
+            "categoria": article.get("source", {}).get("name", "unknown"),
+            "data": article.get("publishedAt", "unknown"),
+            "autore": article.get("author", "unknown"),
+        }),
+        "section": [],
+    }
+
+    # Controlla se c'è contenuto da processare
+    content = article.get("description", "") + " " + article.get("content", "")
+    if content:
+        # Spezza il contenuto in frasi usando il punto come delimitatore
+        sentences = [sentence.strip() for sentence in content.split('.') if sentence.strip()]
+        # Aggiunge ogni frase come una sezione separata
+        vectara_output["section"] = [{"text": sentence} for sentence in sentences]
+
+    return vectara_output
+
