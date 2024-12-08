@@ -18,13 +18,15 @@ def indicizza_documento_vectara(documento):
         "Authorization": {VECTARA_API_KEY}
     }
     payload = {
-        #"corpus_key": [{"customer_id": VECTARA_CUSTOMER_ID, "corpus_id": VECTARA_CORPORA}],
-        "document": [{
-            "documentId": documento['id'],
-            "title": documento['titolo'],
-            "metadataJson": json.dumps(documento['metadata']),
-            "section": [{"text": documento['contenuto']}],
-        }]
+        "id": documento['id'],
+        "type": "core",
+        "metadata": json.dumps(documento['metadata']),
+        "document_parts": [{
+            "text": documento['text'],
+            "context": "string",
+            "custom_dimensions": {}
+            }],
+        
     }
     response = requests.post(url, headers=headers, data=json.dumps(payload))
     if response.status_code == 200:
