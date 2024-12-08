@@ -8,10 +8,9 @@ export const metadata: Metadata = {
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-gradient-to-br from-purple-400 to-indigo-600">
-      <h1 className="text-4xl font-bold text-white mb-8">AI News Content Generator</h1>
+    <main className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 bg-gradient-to-br from-gray-50 to-gray-100">
+      <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-8 text-center">AI News Content Generator</h1>
       <ContentGenerator />
     </main>
   )
 }
-
