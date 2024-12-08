@@ -8,7 +8,6 @@ from utils.llm import  generate_social_posts
 from utils.image_generation import generate_image
 from utils.video_generation import generate_video
 from utils.meme_generation import generate_meme
-from services.groq import genera_embedding
 from services.vectara import indicizza_documento_vectara
 
 # Configura logging

@@ -5,7 +5,7 @@ import requests
 import hashlib
 import json
 from dotenv import load_dotenv
-from groq import Groq
+from services.groq import process_prompt_with_groq
 
 # Configura il logger
 logging.basicConfig(level=logging.DEBUG)
@@ -19,8 +19,6 @@ REDDIT_SECRET = os.getenv("REDDIT_SECRET")
 REDDIT_USER_AGENT = "PostGeniusApp/1.0"
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# Inizializza il client Groq
-groq_client = Groq(api_key=GROQ_API_KEY)
 
 # Configurazione centralizzata
 LIMIT = 1  # Limite massimo di articoli
@@ -44,8 +42,8 @@ def get_relevant_articles(prompt: str, tone: str, platform: str):
     
     Args:
         prompt (str): Il prompt di ricerca.
-        tone (str): Il tono desiderato (es. umoristico).
-        platform (str): La piattaforma target (es. Twitter).
+        tone (str): Il tono desiderato.
+        platform (str): La piattaforma target.
     
     Returns:
         list[dict]: Una lista di articoli univoci formattati per Vectara.
@@ -55,7 +53,15 @@ def get_relevant_articles(prompt: str, tone: str, platform: str):
         return []
 
     # Elabora il prompt usando Groq
-    processed_data = process_prompt_with_groq(prompt, tone, platform)
+    groq_data = process_prompt_with_groq(prompt, tone, platform)
+    processed_data = {
+        **groq_data,
+        "original_input": {
+            "tone": tone,
+            "prompt": prompt,
+            "platform": platform
+        }
+    }
     logger.debug(f"\nProcessed Data: {processed_data}")
 
     # Usare un dizionario per evitare duplicati
@@ -74,7 +80,7 @@ def get_relevant_articles(prompt: str, tone: str, platform: str):
 
     # Recupero articoli da Reddit usando improved_prompt
     if REDDIT_CLIENT_ID and REDDIT_SECRET:
-        reddit_articles = _get_reddit_posts(processed_data.get("improved_prompt", prompt))
+        reddit_articles = _get_reddit_posts(processed_data.get("en_prompt", prompt))
         logger.debug(f"\nReddit Articles Retrieved: {reddit_articles}")
         for article in reddit_articles:
             vectara_formatted = convert_to_vectara_format(article, processed_data)
@@ -87,102 +93,15 @@ def get_relevant_articles(prompt: str, tone: str, platform: str):
     return list(unique_articles.values())
 
 
-
-def process_prompt_with_groq(prompt: str, tone: str, platform: str) -> dict:
-    """
-    Utilizza Groq per elaborare il prompt, tradurlo se necessario, e generare metadati.
-    
-    Args:
-        prompt (str): Il prompt di ricerca.
-        tone (str): Il tono desiderato.
-        platform (str): La piattaforma target.
-    
-    Returns:
-        dict: Un dizionario che contiene:
-              - metadata (dict): Categoria e parole chiave estratte.
-              - improved_prompt (str): Un prompt ottimizzato per ulteriori ricerche.
-              - en_prompt (str): Il prompt tradotto in inglese per l'uso con API esterne.
-              - original_input (dict): L'input originale dell'utente (tone, prompt, platform).
-    """
-    try:
-        # Definisci il messaggio di sistema per Groq
-        system_message = (
-            "You are a metadata assistant. Extract relevant metadata from the user's input and return it as a JSON object in the following format:\n\n"
-            "{\n"
-            '  "metadata": {\n'
-            '    "category": "string",\n'
-            '    "keywords": ["string", "string", ...]\n'
-            '  },\n'
-            '  "en_prompt": "string",\n'
-            '  "improved_prompt": "string",\n'
-            '  "original_input": {\n'
-            '    "tone": "string",\n'
-            '    "prompt": "string",\n'
-            '    "platform": "string"\n'
-            '  }\n'
-            "}\n\n"
-        )
-        
-        # Definisci il messaggio utente includendo tutti i parametri
-        user_message = f"Prompt: {prompt}\nTone: {tone}\nPlatform: {platform}"
-        
-        # Crea la richiesta a Groq con response_format impostato su JSON
-        chat_completion = groq_client.chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": system_message,
-                },
-                {
-                    "role": "user",
-                    "content": user_message,
-                },
-            ],
-            model="llama3-8b-8192",
-            response_format={"type": "json_object"}, # Imposta il formato di risposta su JSON
-        )
-        
-        # Estrai il contenuto della risposta
-        metadata_str = chat_completion.choices[0].message.content.strip()
-        logger.debug(f"Groq response content: {metadata_str}")
-        
-        # Tenta di caricare il JSON
-        processed_data = json.loads(metadata_str)
-        
-        logger.info(f"Processed data: {processed_data}")
-        return processed_data
-    except (ValueError, KeyError, json.JSONDecodeError) as e:
-        logger.exception(f"Failed to process prompt with Groq: {e}")
-        # Ritorna un oggetto con original_input e metadati di fallback
-        return {
-            "metadata": {"category": "unknown", "keywords": []},
-            "improved_prompt": prompt,  # Usa il prompt originale come fallback
-            "en_prompt": prompt,  # Usa il prompt originale come fallback
-            "original_input": {
-                "tone": tone,
-                "prompt": prompt,
-                "platform": platform
-            }
-        }
-
-
 def _get_newsapi_articles(improved_prompt: str):
     """
-    Recupera articoli da NewsAPI basati su un prompt migliorato.
+    Recupera articoli da NewsAPI basati su un prompt migliorato. Accetta solo i primi 'LIMIT' articoli validi.
     
     Args:
         improved_prompt (str): Il prompt migliorato per una ricerca più efficace.
     
     Returns:
-        list[dict]: Una lista di articoli da NewsAPI. Ogni articolo include campi come:
-                    - source (dict): Informazioni sulla fonte.
-                    - author (str): L'autore dell'articolo.
-                    - title (str): Il titolo dell'articolo.
-                    - description (str): La descrizione.
-                    - url (str): L'URL dell'articolo.
-                    - urlToImage (str): L'URL di un'immagine associata.
-                    - publishedAt (str): La data di pubblicazione.
-                    - content (str): Il contenuto dell'articolo.
+        list[dict]: Una lista di articoli validi da NewsAPI.
     """
     current_date = datetime.now(timezone.utc)
     lookback_days = CONFIG["newsapi"]["lookback_days"]
@@ -194,7 +113,7 @@ def _get_newsapi_articles(improved_prompt: str):
         "searchIn": "title,content",
         "language": CONFIG["newsapi"]["language"],
         "sortBy": CONFIG["newsapi"]["sort_by"],
-        "pageSize": CONFIG["newsapi"]["page_size"],
+        "pageSize": CONFIG["newsapi"]["page_size"] * 3,  # Otteniamo un pool più ampio per filtrare
         "from": start_date.isoformat(),
         "to": current_date.isoformat(),
     }
@@ -209,10 +128,29 @@ def _get_newsapi_articles(improved_prompt: str):
         articles = data.get("articles", [])
         if not articles:
             logger.info(f"No articles returned for prompt: {improved_prompt} from NewsAPI.")
-        return articles
+            return []
+
+        # Filtra articoli validi
+        valid_articles = []
+        for article in articles:
+            if (
+                article.get("title") and
+                (article.get("description") or article.get("content")) and
+                article.get("url")
+            ):
+                valid_articles.append(article)
+                if len(valid_articles) >= CONFIG["newsapi"]["page_size"]:
+                    break
+
+        if not valid_articles:
+            logger.info(f"No valid articles found for prompt: {improved_prompt}.")
+        
+        return valid_articles
+
     except requests.RequestException as e:
         logger.exception(f"Request error to NewsAPI: {e}")
-    return []
+        return []
+
 
 def _get_reddit_token():
     """
@@ -234,7 +172,7 @@ def _get_reddit_token():
         )
         token_response.raise_for_status()
         token = token_response.json().get("access_token")
-        logger.debug(f"\nReddit Access Token: {token}")
+        # logger.debug(f"\nReddit Access Token: {token}")
         return token
     except requests.RequestException as e:
         logger.exception(f"Failed to authenticate with Reddit API: {e}")
@@ -334,7 +272,7 @@ def convert_to_vectara_format(article: dict, processed_data: dict):
         return None
 
     # Limita il contenuto a un massimo di 16.000 caratteri
-    max_length = 16000
+    max_length = 8000
     truncated_content = content.strip()[:max_length]
 
     vectara_output = {
