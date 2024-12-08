@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from models.requests import ContentRequest
 from models.responses import ContentResponse
 from services.news_retrieval import get_relevant_articles
-from utils.llm import summarize_articles, generate_social_posts
+from utils.llm import  generate_social_posts
 from utils.image_generation import generate_image
 from utils.video_generation import generate_video
 from utils.meme_generation import generate_meme
@@ -29,7 +29,7 @@ app.add_middleware(
 async def generate_content(req: ContentRequest):
     logger.debug(f"Received request: prompt={req.prompt}, tone={req.tone}, platform={req.platform}")
     try:
-        articles = get_relevant_articles(req.prompt)
+        articles = get_relevant_articles(req.prompt, req.tone, req.platform)
         logger.debug(f"Articles retrieved: {articles}")
 
         if not articles:
@@ -40,8 +40,7 @@ async def generate_content(req: ContentRequest):
 
         for document in articles:
             try:
-                print(document)
-
+                print("\n\n\n\n\n\n\n\n\n\n\n\n",document)
                 # Indicizzare il documento con embedding su Vectara
                 indicizza_documento_vectara(document)
 
