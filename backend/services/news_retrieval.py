@@ -333,6 +333,10 @@ def convert_to_vectara_format(article: dict, processed_data: dict):
         logger.warning(f"Article '{title}' has no valid content and will be discarded.")
         return None
 
+    # Limita il contenuto a un massimo di 16.000 caratteri
+    max_length = 16000
+    truncated_content = content.strip()[:max_length]
+
     vectara_output = {
         "id": unique_id,
         "metadata": {
@@ -343,9 +347,8 @@ def convert_to_vectara_format(article: dict, processed_data: dict):
             "autore": author,
             "fonte": source,
         },
-        "text": content.strip(),
+        "text": truncated_content,
     }
 
     logger.debug(f"\nVectara Formatted Output: {vectara_output}")
     return vectara_output
-
