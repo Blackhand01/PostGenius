@@ -8,7 +8,7 @@ from utils.llm import  generate_social_posts
 from utils.image_generation import generate_image
 from utils.video_generation import generate_video
 from utils.meme_generation import generate_meme
-from services.vectara import indicizza_documento_vectara
+from services.vectara import indicizza_documento_vectara, cerca_documenti
 
 # Configura logging
 logging.basicConfig(level=logging.DEBUG)
@@ -37,30 +37,17 @@ async def generate_content(req: ContentRequest):
 
 
 
-        # for document in articles:
-        #     try:
-        #         print("\n\n\n\n\n\n\n\n\n\n\n\n",document)
-        #         # Indicizzare il documento con embedding su Vectara
-        #         indicizza_documento_vectara(document)
+        for document in articles:
+            try:
+                print("\n\n\n\n\n\n\n\n\n\n\n\n",document)
+                # Indicizzare il documento con embedding su Vectara
+                indicizza_documento_vectara(document)
 
-        #     except Exception as e:
-        #         print(f"Errore nel processare il documento {document['documentId']}: {e}")
+            except Exception as e:
+                print(f"Errore nel processare il documento {document['id']}: {e}")
 
-        # risultati = cerca_documenti(req.prompt, summarize=True)
-
-        # # Stampa i risultati
-        # if risultati:
-        #     print(f"\n\n\n\n\n\nRisultati per il prompt: {req.prompt}")
-        #     for idx, documento in enumerate(risultati, start=1):
-        #         print(f"{idx}. Titolo: {documento['title']}")
-        #         print(f"   Estratto: {documento['snippet']}")
-        #         print(f"   Sintesi: {documento['summary']}")
-        #         print(f"   Metadata: {documento['metadata']}\n")
-        # else:
-        #     print("Nessun risultato trovato.")
-
-
-        
+        summary = cerca_documenti(req.prompt)
+        print("\n\n\n\n\n\n\n",summary)
         
         # summary = summarize_articles(articles, tone=req.tone)
         # logger.debug(f"Generated summary: {summary}")

@@ -21,7 +21,7 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 
 # Configurazione centralizzata
-LIMIT = 1  # Limite massimo di articoli
+LIMIT = 10 # Limite massimo di articoli
 CONFIG = {
     "newsapi": {
         "page_size": LIMIT,
@@ -271,8 +271,8 @@ def convert_to_vectara_format(article: dict, processed_data: dict):
         logger.warning(f"Article '{title}' has no valid content and will be discarded.")
         return None
 
-    # Limita il contenuto a un massimo di 16.000 caratteri
-    max_length = 8000
+    # Limita il contenuto a un massimo di 5.000 caratteri
+    max_length = 5000
     truncated_content = content.strip()[:max_length]
 
     vectara_output = {
