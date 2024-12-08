@@ -38,14 +38,14 @@ async def generate_content(req: ContentRequest):
 
 
 
-        for document in articles:
-            try:
-                print("\n\n\n\n\n\n\n\n\n\n\n\n",document)
-                # Indicizzare il documento con embedding su Vectara
-                indicizza_documento_vectara(document)
+        # for document in articles:
+        #     try:
+        #         print("\n\n\n\n\n\n\n\n\n\n\n\n",document)
+        #         # Indicizzare il documento con embedding su Vectara
+        #         indicizza_documento_vectara(document)
 
-            except Exception as e:
-                print(f"Errore nel processare il documento {document['documentId']}: {e}")
+        #     except Exception as e:
+        #         print(f"Errore nel processare il documento {document['documentId']}: {e}")
 
         # risultati = cerca_documenti(req.prompt, summarize=True)
 
