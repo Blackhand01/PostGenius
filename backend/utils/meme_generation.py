@@ -1,6 +1,7 @@
 import logging
 import requests
 import os
+import re
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -24,21 +25,22 @@ client = OpenAI()
 client.api_key = OPENAI_API_KEY
 
 
-def generate_meme(summary: str, tone: str, platform: str) -> str:
+def generate_meme(summary: str, tone: str, platform: str, prompt: str) -> str:
     """
-    Genera un meme utilizzando l'API Imgflip e analizza il sommario, tono e piattaforma con OpenAI.
+    Genera un meme utilizzando l'API Imgflip e analizza il sommario, tono, piattaforma e prompt con OpenAI.
 
     :param summary: Il sommario dell'articolo o testo per il meme.
     :param tone: Il tono desiderato per il meme (es. umoristico, serio, sarcastico).
     :param platform: La piattaforma di destinazione del meme (es. Instagram, Twitter, LinkedIn).
+    :param prompt: Un messaggio aggiuntivo da includere nella generazione del meme.
     :return: URL del meme generato.
     """
-    if not summary or not tone or not platform:
-        logger.warning("Invalid input: summary, tone, or platform is missing.")
+    if not summary or not tone or not platform or not prompt:
+        logger.warning("Invalid input: summary, tone, platform, or prompt is missing.")
         return "/placeholder_meme_url.jpg"
 
-    # Analizza il sommario, tono e piattaforma con OpenAI
-    text0, text1 = _get_meme_text_from_summary(summary, tone, platform)
+    # Analizza il sommario, tono, piattaforma e prompt con OpenAI
+    text0, text1 = _get_meme_text_from_summary(summary, tone, platform, prompt)
 
     if not text0 or not text1:
         logger.warning("Failed to generate meme text.")
@@ -59,13 +61,14 @@ def generate_meme(summary: str, tone: str, platform: str) -> str:
         return "/placeholder_meme_url.jpg"
 
 
-def _get_meme_text_from_summary(summary: str, tone: str, platform: str) -> tuple:
+def _get_meme_text_from_summary(summary: str, tone: str, platform: str, prompt: str) -> tuple:
     """
-    Analizza il sommario, tono e piattaforma utilizzando OpenAI per generare il testo del meme.
+    Analizza il sommario, tono, piattaforma e prompt utilizzando OpenAI per generare il testo del meme.
 
     :param summary: Il sommario da analizzare.
     :param tone: Il tono desiderato per il meme.
     :param platform: La piattaforma di destinazione del meme.
+    :param prompt: Un messaggio aggiuntivo per personalizzare il meme.
     :return: Tuple contenente (text0, text1).
     """
     try:
@@ -76,7 +79,7 @@ def _get_meme_text_from_summary(summary: str, tone: str, platform: str) -> tuple
                     "role": "system",
                     "content": (
                         "Sei un generatore di meme esperto. Genera due caption brevi per un meme basato sui seguenti input."
-                        " Considera il tono e la piattaforma di pubblicazione per ottimizzare il risultato."
+                        " Considera il tono, la piattaforma di pubblicazione e il prompt per ottimizzare il risultato."
                     ),
                 },
                 {
@@ -85,8 +88,9 @@ def _get_meme_text_from_summary(summary: str, tone: str, platform: str) -> tuple
                         f"Sommario: {summary}\n"
                         f"Tono: {tone}\n"
                         f"Piattaforma: {platform}\n"
+                        f"Prompt aggiuntivo: {prompt}\n"
                         "Genera due caption. La prima deve essere posizionata nella parte superiore del meme, "
-                        "e la seconda nella parte inferiore.\n"
+                        "e la seconda nella parte inferiore. Non utilizzare emoji nel testo.\n"
                         "Formato output:\n"
                         "Top caption: <text0>\n"
                         "Bottom caption: <text1>"
@@ -96,14 +100,40 @@ def _get_meme_text_from_summary(summary: str, tone: str, platform: str) -> tuple
         )
         content = response.choices[0].message.content.strip()
         lines = content.split("\n")
-        text0 = lines[0].replace("Top caption: ", "").strip() if len(lines) > 0 else ""
-        text1 = lines[1].replace("Bottom caption: ", "").strip() if len(lines) > 1 else ""
+        text0 = _remove_emoji(lines[0].replace("Top caption: ", "").strip()) if len(lines) > 0 else ""
+        text1 = _remove_emoji(lines[1].replace("Bottom caption: ", "").strip()) if len(lines) > 1 else ""
 
         logger.info(f"Generated captions: text0='{text0}', text1='{text1}'")
         return text0, text1
     except Exception as e:
         logger.exception(f"Error generating meme text with OpenAI: {e}")
         return "", ""
+
+
+def _remove_emoji(text: str) -> str:
+    """
+    Rimuove eventuali emoji dal testo.
+
+    :param text: Il testo da processare.
+    :return: Testo senza emoji.
+    """
+    emoji_pattern = re.compile(
+        "["
+        "\U0001F600-\U0001F64F"  # Emoticons
+        "\U0001F300-\U0001F5FF"  # Simboli e pittogrammi
+        "\U0001F680-\U0001F6FF"  # Trasporti e simboli mappa
+        "\U0001F700-\U0001F77F"  # Simboli supplementari
+        "\U0001F780-\U0001F7FF"  # Simboli vari A
+        "\U0001F800-\U0001F8FF"  # Simboli vari B
+        "\U0001F900-\U0001F9FF"  # Simboli vari C
+        "\U0001FA00-\U0001FA6F"  # Simboli vari D
+        "\U0001FA70-\U0001FAFF"  # Simboli vari E
+        "\U00002702-\U000027B0"  # Dingbats
+        "\U000024C2-\U0001F251"  # Simboli alfanumerici
+        "]+",
+        flags=re.UNICODE,
+    )
+    return emoji_pattern.sub(r"", text)
 
 
 def _get_popular_meme_template() -> str:
