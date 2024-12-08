@@ -207,4 +207,4 @@ tsconfig.tsbuildinfo
 frontend/.next
 frontend/node_modules
 backend/venv
-scripts
+scripts/collected_specific_code.txt

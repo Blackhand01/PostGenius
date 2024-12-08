@@ -12,16 +12,40 @@ import {
   Tabs,
   Tab,
 } from '@mui/material';
+import axios from 'axios';
 
 export default function ContentGenerator() {
   const [prompt, setPrompt] = useState('');
   const [tone, setTone] = useState('humorous');
   const [platform, setPlatform] = useState('twitter');
   const [tabIndex, setTabIndex] = useState(0);
+  const [generatedContent, setGeneratedContent] = useState({
+    text: '',
+    image: '',
+    video: '',
+    meme: '',
+    sources: [],
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log({ prompt, tone, platform });
+    setLoading(true);
+    setError('');
+    try {
+      const response = await axios.post('http://localhost:8000/generate', {
+        prompt,
+        tone,
+        platform,
+      });
+      setGeneratedContent(response.data);
+    } catch (err) {
+      console.error('Error generating content:', err);
+      setError('Failed to generate content. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -67,10 +91,17 @@ export default function ContentGenerator() {
           fullWidth
           variant="contained"
           color="primary"
+          disabled={loading}
         >
-          Generate Content
+          {loading ? 'Generating...' : 'Generate Content'}
         </Button>
       </form>
+
+      {error && (
+        <Box mt="4" color="red">
+          <p>{error}</p>
+        </Box>
+      )}
 
       <Box mt="4">
         <Tabs
@@ -84,11 +115,31 @@ export default function ContentGenerator() {
           <Tab label="Meme" />
         </Tabs>
         <Box mt="2" p="2">
-          {tabIndex === 0 && <p>Generated Text</p>}
-          {tabIndex === 1 && <p>Generated Image</p>}
-          {tabIndex === 2 && <p>Generated Video</p>}
-          {tabIndex === 3 && <p>Generated Meme</p>}
+          {tabIndex === 0 && <p>{generatedContent.text || 'No text generated yet.'}</p>}
+          {tabIndex === 1 && generatedContent.image && (
+            <img src={generatedContent.image} alt="Generated Image" style={{ maxWidth: '100%' }} />
+          )}
+          {tabIndex === 2 && generatedContent.video && (
+            <video controls src={generatedContent.video} style={{ maxWidth: '100%' }} />
+          )}
+          {tabIndex === 3 && generatedContent.meme && (
+            <img src={generatedContent.meme} alt="Generated Meme" style={{ maxWidth: '100%' }} />
+          )}
         </Box>
+        {generatedContent.sources.length > 0 && (
+          <Box mt="4">
+            <h4>Sources:</h4>
+            <ul>
+              {generatedContent.sources.map((source, index) => (
+                <li key={index}>
+                  <a href={source} target="_blank" rel="noopener noreferrer">
+                    {source}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </Box>
+        )}
       </Box>
     </Box>
   );
