@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 import requests
 import json
-from groq import genera_embedding
+
 
 load_dotenv()
 
@@ -10,7 +10,7 @@ VECTARA_CUSTOMER_ID = os.getenv("VECTARA_CUSTOMER_ID")
 VECTARA_API_KEY = os.getenv("VECTARA_API_KEY")
 VECTARA_CORPORA = os.getenv("VECTARA_CORPORA")
 
-def indicizza_documento_vectara(documento, embedding):
+def indicizza_documento_vectara(documento):
     url = "https://api.vectara.io/v1/index"
     headers = {
         "Content-Type": "application/json",
@@ -24,7 +24,6 @@ def indicizza_documento_vectara(documento, embedding):
             "title": documento['titolo'],
             "metadataJson": json.dumps(documento['metadata']),
             "section": [{"text": documento['contenuto']}],
-            "embedding": embedding
         }]
     }
     response = requests.post(url, headers=headers, data=json.dumps(payload))
@@ -34,7 +33,6 @@ def indicizza_documento_vectara(documento, embedding):
         print(f"Errore nell'indicizzazione: {response.status_code} - {response.text}")
 
 def cerca_documenti(prompt):
-    embedding = genera_embedding(prompt)
     url = "https://api.vectara.io/v1/query"
     headers = {
         "Content-Type": "application/json",
@@ -46,7 +44,6 @@ def cerca_documenti(prompt):
             "query": prompt,
             "num_results": 5,
             "corpus_key": [{"customer_id": VECTARA_CUSTOMER_ID, "corpus_id": VECTARA_CORPORA}],
-            "embedding": embedding
         }]
     }
     response = requests.post(url, headers=headers, data=json.dumps(payload))
