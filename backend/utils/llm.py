@@ -3,19 +3,19 @@ from .openai_client import call_openai
 
 logger = logging.getLogger(__name__)
 
-def summarize_articles(articles, tone="humorous"):
-    if not articles:
-        logger.warning("No articles provided to summarize.")
-        return ""
-    content = "\n\n".join([f"Title: {a.get('title','NoTitle')}\nDesc: {a.get('description','NoDescription')}" for a in articles])
-    messages = [
-        {"role": "system", "content": "You are a helpful assistant that summarizes news articles."},
-        {"role": "user", "content": f"Summarize the following articles in a {tone} tone:\n{content}"}
-    ]
-    summary = call_openai(messages)
-    if not summary:
-        logger.warning("Summarization returned empty.")
-    return summary
+# def summarize_articles(articles, tone="humorous"):
+#     if not articles:
+#         logger.warning("No articles provided to summarize.")
+#         return ""
+#     content = "\n\n".join([f"Title: {a.get('title','NoTitle')}\nDesc: {a.get('description','NoDescription')}" for a in articles])
+#     messages = [
+#         {"role": "system", "content": "You are a helpful assistant that summarizes news articles."},
+#         {"role": "user", "content": f"Summarize the following articles in a {tone} tone:\n{content}"}
+#     ]
+#     summary = call_openai(messages)
+#     if not summary:
+#         logger.warning("Summarization returned empty.")
+#     return summary
 
 def generate_social_posts(summary, platform="twitter", tone="humorous"):
     if not summary:
