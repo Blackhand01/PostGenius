@@ -199,8 +199,6 @@ Thumbs.db
 /.next/cache
 
 # Tailwind CSS
-postcss.config.js
-tailwind.config.js
 
 # Configurazioni specifiche di TypeScript (se applicabile)
 tsconfig.tsbuildinfo
