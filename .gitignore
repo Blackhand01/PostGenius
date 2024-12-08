@@ -187,7 +187,7 @@ Thumbs.db
 .env.*.local
 
 # File di blocco (opzionale, se usi una squadra che non vuole bloccare le versioni)
-/package-lock.json
+frontend/package-lock.json
 /yarn.lock
 /pnpm-lock.yaml
 
