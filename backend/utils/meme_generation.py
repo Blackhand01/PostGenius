@@ -25,7 +25,7 @@ client = OpenAI()
 client.api_key = OPENAI_API_KEY
 
 
-def generate_meme(summary: str, tone: str, platform: str, prompt: str) -> str:
+def generate_meme(summary: str, prompt: str, tone: str, platform: str) -> str:
     """
     Genera un meme utilizzando l'API Imgflip e analizza il sommario, tono, piattaforma e prompt con OpenAI.
 

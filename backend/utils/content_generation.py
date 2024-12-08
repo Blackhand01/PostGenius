@@ -1,6 +1,6 @@
 import os
 import logging
-import openai
+from openai import OpenAI
 from dotenv import load_dotenv
 
 # Caricamento delle variabili di ambiente
@@ -8,52 +8,25 @@ load_dotenv()
 
 # Configurazione del logger
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
 # Chiave API di OpenAI
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     logger.error("OPENAI_API_KEY is missing.")
+client = OpenAI(api_key=OPENAI_API_KEY)
 
-# Configurazione API
-openai.api_key = OPENAI_API_KEY
-
-def call_openai(messages, temperature=0.7, max_tokens=200):
+def generate_social_post(summary, prompt, platform="twitter", tone="humorous", temperature=0.7, max_tokens=200):
     """
-    Effettua una chiamata all'API OpenAI per ottenere un completamento di testo.
+    Genera un post per social media basato su prompt e riassunto, e effettua direttamente una chiamata all'API OpenAI.
 
     Args:
-        messages (list): Lista di messaggi per l'API ChatCompletion.
-        temperature (float): Temperatura della generazione.
-        max_tokens (int): Numero massimo di token nella risposta.
-
-    Returns:
-        str: Risultato generato dall'API OpenAI.
-    """
-    if not OPENAI_API_KEY:
-        logger.error("No OPENAI_API_KEY provided, returning empty result.")
-        return ""
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_tokens
-        )
-        content = response.choices[0].message.content.strip()
-        logger.debug(f"OpenAI response: {content}")
-        return content
-    except Exception as e:
-        logger.exception(f"Error calling OpenAI: {e}")
-        return ""
-def generate_social_post(summary, prompt, platform="twitter", tone="humorous"):
-    """
-    Genera un post per social media basato su prompt e riassunto.
-
-    Args:
-        prompt (str): Il prompt fornito dall'utente.
         summary (str): Riassunto degli articoli.
+        prompt (str): Il prompt fornito dall'utente.
         platform (str): Piattaforma di destinazione (es. "twitter").
         tone (str): Tono desiderato (es. "humorous").
+        temperature (float): Temperatura della generazione (default: 0.7).
+        max_tokens (int): Numero massimo di token nella risposta (default: 200).
 
     Returns:
         str: Contenuto del post generato.
@@ -62,6 +35,7 @@ def generate_social_post(summary, prompt, platform="twitter", tone="humorous"):
         logger.warning("No summary provided to generate social posts.")
         return ""
 
+    # Definizione del messaggio per OpenAI
     messages = [
         {
             "role": "system",
@@ -87,4 +61,17 @@ def generate_social_post(summary, prompt, platform="twitter", tone="humorous"):
         }
     ]
 
-    return call_openai(messages)
+    try:
+        # Chiamata all'API OpenAI
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens
+        )
+        content = response.choices[0].message.content.strip()
+        logger.debug(f"Generated social post: {content}")
+        return content
+    except Exception as e:
+        logger.exception(f"Error generating social post with OpenAI: {e}")
+        return ""

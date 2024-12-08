@@ -56,7 +56,7 @@ async def generate_content(req: ContentRequest):
         text_post = generate_social_post(summary, req.prompt, req.tone, req.platform)
         logger.debug(f"Generated text post: {text_post}")
 
-        meme_url = generate_meme(summary, req.tone, req.platform)
+        meme_url = generate_meme(summary, req.prompt, req.tone, req.platform)
         logger.debug(f"Generated meme url: {meme_url}")
 
 
