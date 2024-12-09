@@ -21,7 +21,7 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 
 # Centralized configuration
-LIMIT = 1  # Maximum number of articles
+LIMIT = 3  # Maximum number of articles
 CONFIG = {
     "newsapi": {
         "page_size": LIMIT,
