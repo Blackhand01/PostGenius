@@ -20,10 +20,6 @@ Platform: *Twitter*
 ### Generated Image
 <img src="docs/img/image_AiTrends.png" alt="Image Example" width="400"/>
 
-### Generated Video
-<video controls src="docs/img/Prepareforalaught.mp4" title="Title"></video>
-P.S. We implemented video generation using RunwayML. However, since it is a paid service, we used its inputs on Pictory AI to create the video due to the availability of a free version. 
-
 ---
 ## Setup and Usage
 
