@@ -89,7 +89,7 @@ def _get_meme_text_from_summary(summary: str, tone: str, platform: str, prompt: 
                         f"Tone: {tone}\n"
                         f"Platform: {platform}\n"
                         f"Additional prompt: {prompt}\n"
-                        "Generate two captions in English. The first should be positioned at the top of the meme, "
+                        "Generate two captions. The first should be positioned at the top of the meme, "
                         "and the second at the bottom. Do not use emojis in the text.\n"
                         "Output format:\n"
                         "Top caption: <text0>\n"
