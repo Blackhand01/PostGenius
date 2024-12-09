@@ -6,7 +6,7 @@ from models.responses import ContentResponse
 from services.news_retrieval import get_relevant_articles
 from utils.content_generation import generate_social_post
 from utils.image_generation import generate_image
-from utils.video_generation import generate_video
+from utils.video_generation import generate_video, generate_video_prompt_with_gpt
 from utils.meme_generation import generate_meme
 from services.vectara import index_vectara_document, search_documents
 
@@ -56,11 +56,15 @@ async def generate_content(req: ContentRequest):
 
         meme_url = generate_meme(summary, req.prompt, req.tone, req.platform)
         logger.debug(f"Generated meme url: {meme_url}")
+        
+        # Generate video prompt using GPT-4
+        video_prompt = generate_video_prompt_with_gpt(summary, req.prompt, req.tone, req.platform)
+        logger.debug(f"Generated video prompt: {video_prompt}")
 
-        image_url = "" #generate_image(summary, req.prompt, req.tone, req.platform)
+        image_url = generate_image(summary, req.prompt, req.tone, req.platform)
         logger.debug(f"Generated image url: {image_url}")
 
-        video_url = "" #generate_video(summary)
+        video_url = generate_video(video_prompt, image_url, duration=10)
         logger.debug(f"Generated video url: {video_url}")
 
         sources = [art["metadata"].get("source", "Source unavailable") for art in articles if "metadata" in art]

@@ -2,6 +2,7 @@ import logging
 import os
 import time
 import requests
+from openai import OpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -9,6 +10,59 @@ logger = logging.getLogger(__name__)
 RUNWAY_API_KEY = os.getenv("RUNWAY_API_KEY")
 RUNWAY_API_VERSION = "2024-11-06"
 RUNWAY_BASE_URL = "https://api.runwayml.com/v1"
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    logger.error("OPENAI_API_KEY is missing.")
+
+def generate_video_prompt_with_gpt(summary: str, prompt: str, tone: str, platform: str) -> str:
+    """
+    Generates a detailed prompt for video generation using GPT-4.
+    
+    :param summary: Summary of the content.
+    :param prompt: User's original prompt.
+    :param tone: Desired tone of the video.
+    :return: A detailed prompt for the video.
+    """
+    if not summary:
+        logger.warning("Summary is missing for video prompt generation.")
+        return "Create a visually engaging video with a professional style."
+
+    try:
+        client = OpenAI(api_key=OPENAI_API_KEY)
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are an expert in generating creative video descriptions for AI models. "
+                    "Your task is to create a highly descriptive and visually engaging prompt "
+                    "for a video based on the provided summary and theme."
+                )
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"Summary: {summary}\n"
+                    f"Theme: {prompt}\n"
+                    f"Tone: {tone}\n"
+                    f"Platform: {platform}\n"
+                    "Generate a video description that is concise, visually detailed, and aligned with the given tone."
+                )
+            }
+        ]
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=messages,
+            temperature=0.7,
+            max_tokens=200
+        )
+        video_prompt = response.choices[0].message.content.strip()
+        logger.info(f"Generated video prompt: {video_prompt}")
+        return video_prompt
+    except Exception as e:
+        logger.exception(f"Error generating video prompt with GPT-4: {e}")
+        return "Create a visually engaging video with a professional style."
+
 
 def generate_video(prompt_text: str, prompt_image_url: str, duration: int = 10) -> str:
     """
