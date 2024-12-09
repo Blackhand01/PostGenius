@@ -37,7 +37,6 @@ async def generate_content(req: ContentRequest):
 
         for document in articles:
             try:
-                print("\n\n\n\n\n\n\n\n\n\n\n\n", document)
                 # Index the document with embeddings on Vectara
                 index_vectara_document(document)
             except Exception as e:
