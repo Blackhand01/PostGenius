@@ -4,21 +4,21 @@
 **PostGenius** is an AI-powered application that leverages Retrieval-Augmented Generation (RAG) techniques to produce multimedia content such as text posts, images, memes, and videos based on news articles. It is designed for applications like social media management, marketing campaigns, and content creation. The project integrates various APIs, including Groq, Vectara, OpenAI, RunwayML, and NewsAPI, to deliver an efficient and seamless experience.
 
 ---
-
 ## Example Outputs
 Prompt: *"AI trends"*
 
 Tone: *Humorous*
 
 Platform: *Twitter*
+
 ### Generated Post
-![Post Example](docs/img/post_AiTrends.png)
+<img src="docs/img/post_AiTrends.png" alt="Post Example" width="600"/>
 
 ### Generated Meme
-![Meme Example](docs/img/meme_AiTrends.jpg)
+<img src="docs/img/meme_AiTrends.jpg" alt="Meme Example" width="400"/>
 
 ### Generated Image
-![Image Example](docs/img/image_AiTrends.png)
+<img src="docs/img/image_AiTrends.png" alt="Image Example" width="400"/>
 
 ---
 ## Setup and Usage
