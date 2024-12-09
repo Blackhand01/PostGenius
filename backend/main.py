@@ -60,31 +60,32 @@ async def generate_content(req: ContentRequest):
         logger.debug(f"Generated meme url: {meme_url}")
 
 
-        # image_url = generate_image(summary)
-        # logger.debug(f"Generated image url: {image_url}")
+        image_url = generate_image(summary, req.prompt, req.tone, req.platform)
+        logger.debug(f"Generated image url: {image_url}")
 
-        # video_url = generate_video(summary)
-        # logger.debug(f"Generated video url: {video_url}")
+        video_url = generate_video(summary)
+        logger.debug(f"Generated video url: {video_url}")
 
 
-        # sources = [art["url"] for art in articles if "url" in art]
-        # logger.debug(f"Sources: {sources}")
+        sources = [art["metadata"].get("fonte", "Source unavailable") for art in articles if "metadata" in art]
+        logger.debug(f"Sources: {sources}")
+
         logger.debug(f"***FINE***")
 
+        return ContentResponse(
+            text=text_post or "",
+            image=image_url or "",
+            video=video_url or "",
+            meme=meme_url or "",
+            sources=sources
+        )
         # return ContentResponse(
         #     text=text_post or "",
         #     image=image_url or "",
-        #     video=video_url or "",
-        #     meme=meme_url or "",
-        #     sources=sources
+        #     video="",
+        #     meme=meme_url or"",
+        #     sources=[]
         # )
-        return ContentResponse(
-            text=text_post or "",
-            image="",
-            video="",
-            meme=meme_url or"",
-            sources=[]
-        )
         
 
     except Exception as e:
