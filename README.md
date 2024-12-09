@@ -126,6 +126,7 @@ npm install
 ---
 
 ## Architecture Diagrams
+![Architecture Diagrams](docs/architecture.png)
 
 ### Primary Workflow
 
@@ -136,7 +137,6 @@ User Input --> Backend API (FastAPI)
             --> Multimedia Creation (RunwayML, Imgflip, OpenAI DALL-E)
             --> Response (Text, Image, Meme, Video, Sources)
 ```
-
 - **Frontend**: Interface for user input and displaying generated content.
 - **Backend**: Manages retrieval and content generation through various API modules.
 - **Storage**: Indexed data is stored on Vectara for efficient retrieval.
