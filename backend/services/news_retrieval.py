@@ -7,11 +7,11 @@ import json
 from dotenv import load_dotenv
 from services.groq import process_prompt_with_groq
 
-# Configura il logger
+# Configure logger
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# Carica le chiavi dall'ambiente
+# Load keys from environment
 load_dotenv(override=True)
 NEWSAPI_KEY = os.getenv("NEWSAPI_KEY")
 REDDIT_CLIENT_ID = os.getenv("REDDIT_CLIENT_ID")
@@ -20,8 +20,8 @@ REDDIT_USER_AGENT = "PostGeniusApp/1.0"
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 
-# Configurazione centralizzata
-LIMIT = 1 # Limite massimo di articoli
+# Centralized configuration
+LIMIT = 1  # Maximum number of articles
 CONFIG = {
     "newsapi": {
         "page_size": LIMIT,
@@ -38,21 +38,21 @@ CONFIG = {
 
 def get_relevant_articles(prompt: str, tone: str, platform: str):
     """
-    Recupera articoli rilevanti basati su un prompt, tono e piattaforma.
+    Retrieve relevant articles based on a prompt, tone, and platform.
     
     Args:
-        prompt (str): Il prompt di ricerca.
-        tone (str): Il tono desiderato.
-        platform (str): La piattaforma target.
+        prompt (str): The search prompt.
+        tone (str): The desired tone.
+        platform (str): The target platform.
     
     Returns:
-        list[dict]: Una lista di articoli univoci formattati per Vectara.
+        list[dict]: A list of unique articles formatted for Vectara.
     """
     if not prompt:
         logger.warning("Empty prompt provided to get_relevant_articles.")
         return []
 
-    # Elabora il prompt usando Groq
+    # Process the prompt using Groq
     groq_data = process_prompt_with_groq(prompt, tone, platform)
     processed_data = {
         **groq_data,
@@ -64,10 +64,10 @@ def get_relevant_articles(prompt: str, tone: str, platform: str):
     }
     logger.debug(f"\nProcessed Data: {processed_data}")
 
-    # Usare un dizionario per evitare duplicati
+    # Use a dictionary to avoid duplicates
     unique_articles = {}
 
-    # Recupero articoli da NewsAPI usando improved_prompt
+    # Retrieve articles from NewsAPI using improved_prompt
     if NEWSAPI_KEY:
         news_articles = _get_newsapi_articles(processed_data.get("en_prompt", prompt))
         logger.debug(f"\nNewsAPI Articles Retrieved: {news_articles}")
@@ -78,7 +78,7 @@ def get_relevant_articles(prompt: str, tone: str, platform: str):
     else:
         logger.warning("NEWSAPI_KEY is missing in environment. Skipping NewsAPI.")
 
-    # Recupero articoli da Reddit usando improved_prompt
+    # Retrieve articles from Reddit using improved_prompt
     if REDDIT_CLIENT_ID and REDDIT_SECRET:
         reddit_articles = _get_reddit_posts(processed_data.get("en_prompt", prompt))
         logger.debug(f"\nReddit Articles Retrieved: {reddit_articles}")
@@ -89,19 +89,19 @@ def get_relevant_articles(prompt: str, tone: str, platform: str):
     else:
         logger.warning("Reddit API credentials are missing in environment. Skipping Reddit.")
 
-    # Ritorna solo articoli univoci
+    # Return only unique articles
     return list(unique_articles.values())
 
 
 def _get_newsapi_articles(improved_prompt: str):
     """
-    Recupera articoli da NewsAPI basati su un prompt migliorato. Accetta solo i primi 'LIMIT' articoli validi.
+    Retrieve articles from NewsAPI based on an improved prompt. Accepts only the first 'LIMIT' valid articles.
     
     Args:
-        improved_prompt (str): Il prompt migliorato per una ricerca più efficace.
+        improved_prompt (str): The improved prompt for a more effective search.
     
     Returns:
-        list[dict]: Una lista di articoli validi da NewsAPI.
+        list[dict]: A list of valid articles from NewsAPI.
     """
     current_date = datetime.now(timezone.utc)
     lookback_days = CONFIG["newsapi"]["lookback_days"]
@@ -113,7 +113,7 @@ def _get_newsapi_articles(improved_prompt: str):
         "searchIn": "title,content",
         "language": CONFIG["newsapi"]["language"],
         "sortBy": CONFIG["newsapi"]["sort_by"],
-        "pageSize": CONFIG["newsapi"]["page_size"] * 3,  # Otteniamo un pool più ampio per filtrare
+        "pageSize": CONFIG["newsapi"]["page_size"] * 3,  # Get a larger pool for filtering
         "from": start_date.isoformat(),
         "to": current_date.isoformat(),
     }
@@ -130,7 +130,7 @@ def _get_newsapi_articles(improved_prompt: str):
             logger.info(f"No articles returned for prompt: {improved_prompt} from NewsAPI.")
             return []
 
-        # Filtra articoli validi
+        # Filter valid articles
         valid_articles = []
         for article in articles:
             if (
@@ -154,10 +154,10 @@ def _get_newsapi_articles(improved_prompt: str):
 
 def _get_reddit_token():
     """
-    Autentica con Reddit API e recupera un token di accesso.
+    Authenticate with Reddit API and retrieve an access token.
     
     Returns:
-        str or None: Il token di accesso, se disponibile. Restituisce None in caso di errore.
+        str or None: The access token, if available. Returns None in case of an error.
     """
     auth = requests.auth.HTTPBasicAuth(REDDIT_CLIENT_ID, REDDIT_SECRET)
     data = {"grant_type": "client_credentials"}
@@ -180,21 +180,21 @@ def _get_reddit_token():
 
 def _get_reddit_posts(improved_prompt: str):
     """
-    Recupera post da Reddit basati su un prompt migliorato.
+    Retrieve posts from Reddit based on an improved prompt.
     
     Args:
-        improved_prompt (str): Il prompt migliorato per una ricerca più efficace.
+        improved_prompt (str): The improved prompt for a more effective search.
     
     Returns:
-        list[dict]: Una lista di post da Reddit. Ogni post include campi come:
-                    - source (dict): Informazioni sulla fonte (es. nome).
-                    - author (str): L'autore del post.
-                    - title (str): Il titolo del post.
-                    - description (str): Il testo del post.
-                    - url (str): L'URL del post.
-                    - urlToImage (None): Nessuna immagine disponibile per i post di Reddit.
-                    - publishedAt (int): Timestamp di pubblicazione.
-                    - content (str): Il contenuto del post.
+        list[dict]: A list of posts from Reddit. Each post includes fields such as:
+                    - source (dict): Information about the source (e.g., name).
+                    - author (str): The post author.
+                    - title (str): The post title.
+                    - description (str): The post text.
+                    - url (str): The post URL.
+                    - urlToImage (None): No image available for Reddit posts.
+                    - publishedAt (int): Timestamp of publication.
+                    - content (str): The post content.
     """
    
     token = _get_reddit_token()
@@ -238,14 +238,14 @@ def _get_reddit_posts(improved_prompt: str):
 
 def convert_to_vectara_format(article: dict, processed_data: dict):
     """
-    Converte un articolo nel formato compatibile con Vectara, scartando quelli senza fonte.
+    Convert an article into a format compatible with Vectara, discarding those without a source.
     
     Args:
-        article (dict): L'articolo da convertire. Contiene campi come titolo, URL, autore e contenuto.
-        processed_data (dict): I dati processati da Groq. Contiene i metadati e il prompt migliorato.
+        article (dict): The article to convert. Contains fields such as title, URL, author, and content.
+        processed_data (dict): Data processed by Groq. Contains metadata and the improved prompt.
     
     Returns:
-        dict or None: Un dizionario formattato per Vectara o None se l'articolo è invalido.
+        dict or None: A dictionary formatted for Vectara or None if the article is invalid.
     """
     source = article.get("url")
     if not source:
@@ -256,22 +256,22 @@ def convert_to_vectara_format(article: dict, processed_data: dict):
     author = article.get("author", "unknown")
     category = processed_data.get("metadata", {}).get("category", "unknown")
     published_date = article.get("publishedAt", "unknown")
-    if isinstance(published_date, float):  # Se è un float, convertirlo in stringa
+    if isinstance(published_date, float):  # If it is a float, convert to string
         published_date = str(published_date)
-    elif not isinstance(published_date, str):  # Se non è stringa né float, fallback a "unknown"
+    elif not isinstance(published_date, str):  # If neither string nor float, fallback to "unknown"
         published_date = "unknown"
 
     published_date = published_date.split("T")[0] if "T" in published_date else published_date    
     title = article.get("title", "Untitled")
     content = article.get("description", "") + " " + article.get("content", "")
-    language = "eng"  # Assumiamo inglese come lingua predefinita
+    language = "eng"  # Assume English as the default language
 
-    # Controlla se il contenuto è valido
+    # Check if content is valid
     if not content.strip():
         logger.warning(f"Article '{title}' has no valid content and will be discarded.")
         return None
 
-    # Limita il contenuto a un massimo di 5.000 caratteri
+    # Limit content to a maximum of 5,000 characters
     max_length = 5000
     truncated_content = content.strip()[:max_length]
 
@@ -280,10 +280,10 @@ def convert_to_vectara_format(article: dict, processed_data: dict):
         "metadata": {
             "title": title,
             "lang": language,
-            "categoria": category,
-            "data": published_date,
-            "autore": author,
-            "fonte": source,
+            "category": category,
+            "date": published_date,
+            "author": author,
+            "source": source,
         },
         "text": truncated_content,
     }

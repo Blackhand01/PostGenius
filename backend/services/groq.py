@@ -9,21 +9,21 @@ load_dotenv()
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 logger = logging.getLogger(__name__)
 
-# Inizializza il client Groq
+# Initialize Groq client
 groq_client = Groq(api_key=GROQ_API_KEY)
 
 def process_prompt_with_groq(prompt: str, tone: str, platform: str) -> dict:
     """
-    Utilizza Groq per elaborare il prompt e restituire metadati, prompt tradotto e migliorato.
-    Ottimizza il prompt migliorato per la ricerca su Reddit.
+    Uses Groq to process the prompt and return metadata, translated and improved prompts.
+    Optimizes the improved prompt for Reddit searches.
 
     Args:
-        prompt (str): Il prompt da tradurre ed elaborare.
-        tone (str): Il tono desiderato.
-        platform (str): La piattaforma target.
+        prompt (str): The prompt to be translated and processed.
+        tone (str): The desired tone.
+        platform (str): The target platform.
 
     Returns:
-        dict: Contiene `metadata`, `en_prompt` e `improved_prompt`.
+        dict: Contains `metadata`, `en_prompt`, and `improved_prompt`.
     """
     try:
         system_message = (
@@ -53,7 +53,7 @@ def process_prompt_with_groq(prompt: str, tone: str, platform: str) -> dict:
         
         user_message = f"Prompt: {prompt}\nTone: {tone}\nPlatform: {platform}"
         
-        # Richiesta a Groq
+        # Request to Groq
         chat_completion = groq_client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_message},
@@ -66,16 +66,16 @@ def process_prompt_with_groq(prompt: str, tone: str, platform: str) -> dict:
         metadata_str = chat_completion.choices[0].message.content.strip()
         logger.debug(f"Groq response content: {metadata_str}")
         
-        # Parse della risposta JSON
+        # Parse JSON response
         processed_data = json.loads(metadata_str)
         logger.info(f"Processed data: {processed_data}")
         
         return processed_data
     except (ValueError, KeyError, json.JSONDecodeError) as e:
         logger.exception(f"Failed to process prompt with Groq: {e}")
-        # Ritorna un oggetto con valori di fallback
+        # Return an object with fallback values
         return {
             "metadata": {"category": "unknown", "keywords": []},
-            "en_prompt": prompt,  # Usa il prompt originale come fallback
-            "improved_prompt": f"title:{prompt} OR subreddit:all"  # Usa una query base ottimizzata per Reddit come fallback
+            "en_prompt": prompt,  # Use the original prompt as a fallback
+            "improved_prompt": f"title:{prompt} OR subreddit:all"  # Use a basic query optimized for Reddit as a fallback
         }

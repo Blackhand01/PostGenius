@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import requests
 import json
 
-
+# Load environment variables
 load_dotenv()
 
 VECTARA_CUSTOMER_ID = os.getenv("VECTARA_CUSTOMER_ID")
@@ -11,18 +11,17 @@ VECTARA_API_KEY = os.getenv("VECTARA_API_KEY")
 VECTARA_CORPORA = os.getenv("VECTARA_CORPORA")
 VECTARA_CORPUS_API_KEY = os.getenv("VECTARA_CORPUS_API_KEY")
 
-def indicizza_documento_vectara(documento):
-    url = "https://api.vectara.io/v2/corpora/"+VECTARA_CORPORA+"/documents"
+def index_vectara_document(document):
+    url = "https://api.vectara.io/v2/corpora/" + VECTARA_CORPORA + "/documents"
     payload = {
-        "id": documento['id'],
+        "id": document['id'],
         "type": "core",
-        "metadata": documento['metadata'],
+        "metadata": document['metadata'],
         "document_parts": [{
-            "text": documento['text'],
+            "text": document['text'],
             "context": "string",
             "custom_dimensions": {}
-            }],
-        
+        }],
     }
     headers = {
         "Content-Type": "application/json",
@@ -30,23 +29,23 @@ def indicizza_documento_vectara(documento):
         "x-api-key": VECTARA_API_KEY
     }
     response = requests.post(url, headers=headers, data=json.dumps(payload))
-    #print("\n\n\n Risulatoto indx: ", response)
+    #print("\n\n\n Index Result: ", response)
     if response.status_code == 201:
-        print("\nDocumento indicizzato con successo.")
+        print("\nDocument indexed successfully.")
     else:
-        print(f"Errore nell'indicizzazione: {response.status_code} - {response.text}")
+        print(f"Error during indexing: {response.status_code} - {response.text}")
 
 
-def cerca_documenti(prompt, num_results=3, metadata_filter=""):
-    url = "https://api.vectara.io/v2/query"  # URL corretto
+def search_documents(prompt, num_results=3, metadata_filter=""):
+    url = "https://api.vectara.io/v2/query"  # Correct URL
 
-    # Costruzione del payload
+    # Construct the payload
     payload = {
         "query": prompt,
         "search": {
             "corpora": [
                 {
-                    "corpus_key": VECTARA_CORPORA,  # Specifica il corpus nel payload
+                    "corpus_key": VECTARA_CORPORA,  # Specify the corpus in the payload
                     "metadata_filter": metadata_filter,
                     "lexical_interpolation": 0.005,
                     "custom_dimensions": {}
@@ -76,22 +75,22 @@ def cerca_documenti(prompt, num_results=3, metadata_filter=""):
         "save_history": True
     }
 
-    # Intestazioni della richiesta
+    # Request headers
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
         "x-api-key": VECTARA_API_KEY
     }
 
-    # Effettua la richiesta
+    # Make the request
     response = requests.post(url, headers=headers, data=json.dumps(payload))
     
-    print("Risultato coglione: ", response.json())
+    print("Result: ", response.json())
 
-    # Verifica della risposta
+    # Check the response
     if response.status_code == 200:
-        risultati = response.json()
-        output = risultati['summary']
+        results = response.json()
+        output = results['summary']
         return output
     else:
-        raise ValueError(f"Errore nella ricerca: {response.status_code} - {response.text}")
+        raise ValueError(f"Error during search: {response.status_code} - {response.text}")

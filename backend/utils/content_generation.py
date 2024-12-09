@@ -3,14 +3,14 @@ import logging
 from openai import OpenAI
 from dotenv import load_dotenv
 
-# Caricamento delle variabili di ambiente
+# Load environment variables
 load_dotenv()
 
-# Configurazione del logger
+# Logger configuration
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
-# Chiave API di OpenAI
+# OpenAI API key
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     logger.error("OPENAI_API_KEY is missing.")
@@ -18,24 +18,24 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 def generate_social_post(summary, prompt, platform="twitter", tone="humorous", temperature=0.7, max_tokens=200):
     """
-    Genera un post per social media basato su prompt e riassunto, e effettua direttamente una chiamata all'API OpenAI.
+    Generates a social media post based on a prompt and summary and makes a direct call to the OpenAI API.
 
     Args:
-        summary (str): Riassunto degli articoli.
-        prompt (str): Il prompt fornito dall'utente.
-        platform (str): Piattaforma di destinazione (es. "twitter").
-        tone (str): Tono desiderato (es. "humorous").
-        temperature (float): Temperatura della generazione (default: 0.7).
-        max_tokens (int): Numero massimo di token nella risposta (default: 200).
+        summary (str): Summary of the articles.
+        prompt (str): The user-provided prompt.
+        platform (str): Target platform (e.g., "twitter").
+        tone (str): Desired tone (e.g., "humorous").
+        temperature (float): Temperature for generation (default: 0.7).
+        max_tokens (int): Maximum number of tokens in the response (default: 200).
 
     Returns:
-        str: Contenuto del post generato.
+        str: Content of the generated post.
     """
     if not summary:
         logger.warning("No summary provided to generate social posts.")
         return ""
 
-    # Definizione del messaggio per OpenAI
+    # Define the message for OpenAI
     messages = [
         {
             "role": "system",
@@ -62,7 +62,7 @@ def generate_social_post(summary, prompt, platform="twitter", tone="humorous", t
     ]
 
     try:
-        # Chiamata all'API OpenAI
+        # Call OpenAI API
         response = client.chat.completions.create(
             model="gpt-4",
             messages=messages,
