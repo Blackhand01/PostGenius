@@ -126,7 +126,7 @@ npm install
 ---
 
 ## Architecture Diagrams
-![Architecture Diagrams](docs/architecture.png)
+<img src="docs/img/architecture.png" alt="Image Example" width="600"/>
 
 ### Primary Workflow
 
