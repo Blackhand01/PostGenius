@@ -123,10 +123,9 @@ npm install
 - **CPU**: Quad-core processor or better
 - **Storage**: At least 2 GB of available space
 
----
 
 ## Architecture Diagrams
-<img src="docs/img/architecture.png" alt="Image Example" width="600"/>
+<img src="docs/img/architecture.png" alt="Architecture" width="600"/>
 
 ### Primary Workflow
 
