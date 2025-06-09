@@ -20,8 +20,8 @@ Platform: *Twitter*
 ### Generated Image
 <img src="docs/img/image_AiTrends.png" alt="Image Example" width="400"/>
 
-### Demo Video
-[▶️ PostGenius_Demo.mp4](docs/img/PostGenius_Demo.mp4)
+### Demo App
+[▶️ PostGenius_Demo.mp4](docs/PostGenius_Demo.mp4)
 
 ---
 
